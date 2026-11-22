@@ -126,7 +126,7 @@
         <li>把網址貼到本檔案 <code>SCRIPT_URL</code> 那一行，再把網頁分享出去。</li>
         <li>查看結果：在 Notion 的 Vote 資料庫，用 <b>Select 欄位分組（Group by）</b>，每組的筆數就是該時段可出席人數；也可以新增「圖表」檢視，一眼看出哪個時段最多人。</li>
       </ol>
-      <p class="hint">每勾一個時段，就會在 Notion 新增一列（ID、Name、Select），所以一個人勾 3 個時段會有 3 列。</p>
+      <p class="hint">每勾一個時段，就會在 Notion 新增一列（ID、Name、Select），所以一個人勾 3 個時段會有 3 列。每次有人送出，會寄一封通知信到 peculab.ai@gmail.com。</p>
     </details>
   </section>
 
@@ -163,12 +163,13 @@
     status.className = type || '';
   }
 
-  // 送一筆資料到 Apps Script（對應 code.gs 的 doPost：id、name、choice）
-  async function send(id, name, choice) {
+  // 一次把所有勾選的時段送到 Apps Script（對應 code.gs 的 doPost：id、name、choices）
+  // 後端會每個時段寫一列到 Notion，再寄一封通知信給主辦人
+  async function send(id, name, choices) {
     const res = await fetch(SCRIPT_URL, {
       method: 'POST',
       // 用字串當 body，瀏覽器會用 text/plain 送出，可避開 CORS 預檢
-      body: JSON.stringify({ id, name, choice })
+      body: JSON.stringify({ id, name, choices })
     });
     const result = await res.json();
     if (!result.ok) throw new Error(result.error);
@@ -186,11 +187,8 @@
 
     btn.disabled = true;
     try {
-      // 每個勾選的時段各送一筆，Notion 才能依時段統計人數
-      for (let i = 0; i < chosen.length; i++) {
-        show(`送出中…（${i + 1} / ${chosen.length}）`);
-        await send(id, name, chosen[i]);
-      }
+      show(`送出中…（共 ${chosen.length} 個時段）`);
+      await send(id, name, chosen);
       show(`✅ 送出成功！共登記 ${chosen.length} 個時段，謝謝 ${name}！`, 'ok');
       boxes().forEach(b => b.checked = false);
     } catch (err) {
