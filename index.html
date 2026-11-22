@@ -135,7 +135,7 @@
 
 <script>
   // ① 把 Apps Script「網頁應用程式」的網址貼在這裡
-  const SCRIPT_URL = 'https://script.google.com/macros/s/你的部署ID/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGlu-E49hvrueaOh0JJHjTCpzesApodDTruNQsQZBXjY6upk-gHtymmcAdNldz1mjNeA/exec';
 
   // ② 調查的日期與時段（改這裡就能換成別的活動）
   const DAYS  = ['11/26（四）', '11/27（五）', '11/28（六）', '11/29（日）'];
@@ -180,6 +180,7 @@
     const name = document.getElementById('uname').value.trim();
     const chosen = boxes().filter(b => b.checked).map(b => b.value);
 
+    if (SCRIPT_URL.includes('你的部署ID')) return show('⚠️ 主辦人還沒設定 SCRIPT_URL：請把 Apps Script 部署網址貼到程式碼裡', 'err');
     if (!id || !name)     return show('請填寫識別碼和姓名', 'err');
     if (chosen.length === 0) return show('請至少勾選一個時段', 'err');
 
