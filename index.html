@@ -1,51 +1,203 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>留言板</title>
-    <style>
-      body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 0 16px; }
-      input, textarea, button { width: 100%; margin-bottom: 12px; padding: 8px; font-size: 16px; box-sizing: border-box; }
-      button { cursor: pointer; }
-    </style>
-  </head>
-  <body>
-    <h2>留言板</h2>
-    <input id="name" placeholder="你的名字">
-    <textarea id="message" rows="4" placeholder="想說的話"></textarea>
-    <button onclick="send()">送出</button>
-    <p id="status"></p>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>感恩節活動時間調查</title>
+<style>
+  :root {
+    --bg: #fbf6ef;
+    --card: #ffffff;
+    --ink: #3b2a1e;
+    --muted: #8a7462;
+    --accent: #c8642a;
+    --accent-soft: #f6e3d4;
+    --line: #ead9c8;
+    --ok: #2f7d4f;
+    --err: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+  header h1 { font-size: 1.8rem; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--muted); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-top: 20px;
+  }
+  h2 { font-size: 1.15rem; margin: 0 0 12px; }
+  ol { margin: 0; padding-left: 1.3em; }
+  ol li { margin-bottom: 4px; }
+  label.field { display: block; font-weight: 600; margin: 14px 0 6px; }
+  .hint { font-weight: 400; color: var(--muted); font-size: .9rem; }
+  input[type=text] {
+    width: 100%; padding: 10px 12px; font-size: 1rem;
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  input[type=text]:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
-    <script>
-      // Apps Script 部署後拿到的網址（後端）
-      const API_URL = 'https://script.google.com/macros/s/AKfycbyXN6O8BKnhzkamnLHFdkhsaRIjx8Yu8q1c7vwtK0qRs7C6YyRt6k5z0DOxOq0chXJT4w/exec';
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { border: 1px solid var(--line); text-align: center; padding: 0; }
+  th { background: var(--accent-soft); padding: 8px 4px; font-size: .95rem; }
+  td.day { background: #fdfaf6; font-weight: 600; padding: 8px; white-space: nowrap; }
+  td label { display: block; padding: 12px 4px; cursor: pointer; }
+  td input { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
+  td:has(input:checked) { background: var(--accent-soft); }
 
-      async function send() {
-        const name = document.getElementById('name').value;
-        const message = document.getElementById('message').value;
-        const status = document.getElementById('status');
-        status.textContent = '送出中…';
+  .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  button {
+    font-size: 1rem; padding: 10px 18px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
 
-        try {
-          // 把資料用 JSON 送到 Apps Script 的 doPost
-          const response = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({ name: name, message: message })
-          });
-          const result = await response.json();
+  #status { margin-top: 14px; font-weight: 600; min-height: 1.5em; }
+  #status.ok { color: var(--ok); }
+  #status.err { color: var(--err); }
 
-          if (result.ok) {
-            status.textContent = '送出成功！去 Notion 看看吧';
-            document.getElementById('name').value = '';
-            document.getElementById('message').value = '';
-          } else {
-            status.textContent = '發生錯誤：' + result.error;
-          }
-        } catch (err) {
-          status.textContent = '連線失敗：' + err.message;
-        }
+  details summary { cursor: pointer; font-weight: 600; }
+  details ol { margin-top: 10px; }
+  code { background: #f3ebe2; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top: 28px; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <h1>🦃 感恩節活動時間調查</h1>
+    <p>11/26（四）～ 11/29（日）連假，勾選你可以出席的所有時段，我們會挑選最多人能來的時間！</p>
+  </header>
+
+  <!-- 使用說明：給填寫的人 -->
+  <section class="card">
+    <h2>📋 填寫說明</h2>
+    <ol>
+      <li><b>識別碼</b>：填一個代表你的代號（例如 email 或手機末四碼），之後要修改時方便主辦人辨認。</li>
+      <li><b>姓名</b>：填你的名字或暱稱。</li>
+      <li><b>勾選時段</b>：在下方表格勾選<b>所有</b>你可以出席的時段，可以複選。</li>
+      <li>按「送出」，看到 <span style="color:var(--ok)">✅ 送出成功</span> 就完成了。</li>
+      <li>想修改？直接重新填一次並告訴主辦人，主辦人會以最新一筆為準。</li>
+    </ol>
+  </section>
+
+  <!-- 表單 -->
+  <section class="card">
+    <h2>✍️ 我的出席時間</h2>
+    <form id="form">
+      <label class="field" for="uid">識別碼 <span class="hint">（必填，例如 email 或手機末四碼）</span></label>
+      <input type="text" id="uid" required>
+
+      <label class="field" for="uname">姓名 <span class="hint">（必填）</span></label>
+      <input type="text" id="uname" required>
+
+      <label class="field">可以出席的時段 <span class="hint">（可複選）</span></label>
+      <table id="slots"></table>
+
+      <div class="row">
+        <button type="button" id="all">全部勾選</button>
+        <button type="button" id="none">清除勾選</button>
+      </div>
+      <div class="row">
+        <button type="submit" class="primary" id="submit">送出</button>
+      </div>
+      <div id="status"></div>
+    </form>
+  </section>
+
+  <!-- 使用說明：給主辦人 -->
+  <section class="card">
+    <details>
+      <summary>🔧 給主辦人：設定與查看結果</summary>
+      <ol>
+        <li>在 Apps Script 貼上 <code>code.gs</code>，於「專案設定 → 指令碼屬性」新增 <code>NOTION_TOKEN</code>。</li>
+        <li>執行 <code>testConnection</code>，確認五個步驟都是 ✅。</li>
+        <li>按「部署 → 新增部署作業 → 網頁應用程式」，執行身分選「我」，存取權選「所有人」，複製網址。</li>
+        <li>把網址貼到本檔案 <code>SCRIPT_URL</code> 那一行，再把網頁分享出去。</li>
+        <li>查看結果：在 Notion 的 Vote 資料庫，用 <b>Select 欄位分組（Group by）</b>，每組的筆數就是該時段可出席人數；也可以新增「圖表」檢視，一眼看出哪個時段最多人。</li>
+      </ol>
+      <p class="hint">每勾一個時段，就會在 Notion 新增一列（ID、Name、Select），所以一個人勾 3 個時段會有 3 列。</p>
+    </details>
+  </section>
+
+  <footer>PecuLab · 第七次上課範例</footer>
+</main>
+
+<script>
+  // ① 把 Apps Script「網頁應用程式」的網址貼在這裡
+  const SCRIPT_URL = 'https://script.google.com/macros/s/你的部署ID/exec';
+
+  // ② 調查的日期與時段（改這裡就能換成別的活動）
+  const DAYS  = ['11/26（四）', '11/27（五）', '11/28（六）', '11/29（日）'];
+  const TIMES = ['上午', '下午', '晚上'];
+
+  // 產生時段表格：每一格的 value 會變成 Notion 的 Select 選項，例如「11/26（四）下午」
+  const table = document.getElementById('slots');
+  table.innerHTML =
+    '<tr><th></th>' + TIMES.map(t => `<th>${t}</th>`).join('') + '</tr>' +
+    DAYS.map(d =>
+      `<tr><td class="day">${d}</td>` +
+      TIMES.map(t => `<td><label><input type="checkbox" name="slot" value="${d}${t}"></label></td>`).join('') +
+      '</tr>'
+    ).join('');
+
+  const boxes  = () => [...document.querySelectorAll('input[name=slot]')];
+  const status = document.getElementById('status');
+  const btn    = document.getElementById('submit');
+
+  document.getElementById('all').onclick  = () => boxes().forEach(b => b.checked = true);
+  document.getElementById('none').onclick = () => boxes().forEach(b => b.checked = false);
+
+  function show(msg, type) {
+    status.textContent = msg;
+    status.className = type || '';
+  }
+
+  // 送一筆資料到 Apps Script（對應 code.gs 的 doPost：id、name、choice）
+  async function send(id, name, choice) {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      // 用字串當 body，瀏覽器會用 text/plain 送出，可避開 CORS 預檢
+      body: JSON.stringify({ id, name, choice })
+    });
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error);
+  }
+
+  document.getElementById('form').onsubmit = async (e) => {
+    e.preventDefault();
+    const id   = document.getElementById('uid').value.trim();
+    const name = document.getElementById('uname').value.trim();
+    const chosen = boxes().filter(b => b.checked).map(b => b.value);
+
+    if (!id || !name)     return show('請填寫識別碼和姓名', 'err');
+    if (chosen.length === 0) return show('請至少勾選一個時段', 'err');
+
+    btn.disabled = true;
+    try {
+      // 每個勾選的時段各送一筆，Notion 才能依時段統計人數
+      for (let i = 0; i < chosen.length; i++) {
+        show(`送出中…（${i + 1} / ${chosen.length}）`);
+        await send(id, name, chosen[i]);
       }
-    </script>
-  </body>
+      show(`✅ 送出成功！共登記 ${chosen.length} 個時段，謝謝 ${name}！`, 'ok');
+      boxes().forEach(b => b.checked = false);
+    } catch (err) {
+      show('❌ 送出失敗：' + err.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  };
+</script>
+</body>
 </html>

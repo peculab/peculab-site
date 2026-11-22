@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>留言板</title>
+    <style>
+      body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 0 16px; }
+      input, textarea, button { width: 100%; margin-bottom: 12px; padding: 8px; font-size: 16px; box-sizing: border-box; }
+      button { cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <h2>留言板</h2>
+    <input id="name" placeholder="你的名字">
+    <textarea id="message" rows="4" placeholder="想說的話"></textarea>
+    <button onclick="send()">送出</button>
+    <p id="status"></p>
+
+    <script>
+      // Apps Script 部署後拿到的網址（後端）
+      const API_URL = 'https://script.google.com/macros/s/AKfycbyXN6O8BKnhzkamnLHFdkhsaRIjx8Yu8q1c7vwtK0qRs7C6YyRt6k5z0DOxOq0chXJT4w/exec';
+
+      async function send() {
+        const name = document.getElementById('name').value;
+        const message = document.getElementById('message').value;
+        const status = document.getElementById('status');
+        status.textContent = '送出中…';
+
+        try {
+          // 把資料用 JSON 送到 Apps Script 的 doPost
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ name: name, message: message })
+          });
+          const result = await response.json();
+
+          if (result.ok) {
+            status.textContent = '送出成功！去 Notion 看看吧';
+            document.getElementById('name').value = '';
+            document.getElementById('message').value = '';
+          } else {
+            status.textContent = '發生錯誤：' + result.error;
+          }
+        } catch (err) {
+          status.textContent = '連線失敗：' + err.message;
+        }
+      }
+    </script>
+  </body>
+</html>
